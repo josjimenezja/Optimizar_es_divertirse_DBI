@@ -10,14 +10,14 @@ lr_data<-read.csv("D:\\Documentos\\Rfiles\\Actividad3\\datos_clasificacion.csv",
 
 #1. Dividir el rango de la variable explicativa (x) en 10 sub intervalos, entiendase variable explicativa como variable independiente, efectivamente x 
 
-#Necesito tomar todos los puntos que estén dentro de (Xmax-Xmin)/10 [1] ... 
+#Necesito tomar todos los puntos que estÃ©n dentro de (Xmax-Xmin)/10 [1] ... 
 #Calcular la longitud de cada subintervalo
 #Agrupar por subintervalos
 #iterar sobre todos los datos
 #mi incremento es la distancia del subintervalo, ya calculada
 #punto de partida es Xmin, 10 iteraciones
-#n_int es el número del subintervalo
-#Hasta aquí ya tengo los n intervalos iguales
+#n_int es el nÃºmero del subintervalo
+#Hasta aquÃ­ ya tengo los n intervalos iguales
 
 x_from<-min(lr_data$x)
 d_int<-(max(lr_data$x) - x_from)/10
@@ -27,6 +27,7 @@ res<-c()
 
 while(x_from < x_fin) {
   count<-0
+  zCount<-0
   #print(n_int)
   sRange<-c(x_from,x_from+d_int)
   if (n_int == 10){
@@ -37,41 +38,42 @@ while(x_from < x_fin) {
     #Datos que se encuentren en el rango actual y que hayan ocurrido
     if (inside.range(lr_data$x[i], sRange) & (lr_data$y[i] == 1)){
       count<-count+1  
+    } else if (inside.range(lr_data$x[i], sRange) & (lr_data$y[i] == 0)) { 
+      zCount<-zCount+1
     }
   }
-  res<-rbind(res, c(n_int,sRange[1],mean(c(sRange[1],sRange[2])),sRange[2],count))
+  rel_oc<-count/(zCount + count)
+  res<-rbind(res, c(n_int,sRange[1],mean(c(sRange[1], sRange[2])), sRange[2], count, zCount,rel_oc))
   x_from <- x_from + d_int
   n_int<-n_int+1
 }
-colnames(res)<-c('nSubIntervalo','xFrom','xMean', 'xTo','Ocurrencias')
-#En res se encuentra la información necesaria para el primer punto
+colnames(res)<-c('nSubIntervalo','xFrom','xMean', 'xTo','Ocurrencias', 'zCount', 'RelativeOcurr')
+#En res se encuentra la informaciÃ³n necesaria para el primer punto
 
-#2. En el centro de cada subintervalo dibuje una línea vertical con la tasa de ocurrencias(unos) en ese subintervalo
+#2. En el centro de cada subintervalo dibuje una lÃ­nea vertical con la tasa de ocurrencias(unos) **relativas** en ese subintervalo
 dfRes<-data.frame(res)
-plot(dfRes$xMean, dfRes$Ocurrencias, main= "OCURRENCIAS POR SUBINTERVALO", type="h", col=rep(c("red", "blue"), each=5))
+plot(dfRes$xMean, dfRes$RelativeOcurr, main= "TASA DE OCURRENCIAS **RELATIVAS** POR SUBINTERVALO", xlab= 'Subintervalos', ylab= 'Tasa de ocurrencias **relativas**', type="h", col=rep(c("red", "blue"), each=5))
 grid(col = "darkgray", lwd = 1)
 
 #3.1. Proponer un punto en el espacio de parametros (B1 y B2)
 betas<-c()
-plot(0, 0, col=NULL,xlim=c(-15, 15), ylim=c(-15, 15), main= "SELECCIONA UNA COMBINACIÓN DENTRO DEL ESPACIO DE PARAMETROS", xlab="B0", ylab="B1")
+plot(0, 0, col=NULL,xlim=c(-15, 15), ylim=c(-15, 15), main= "SELECCIONA UNA COMBINACIÃ“N DENTRO DEL ESPACIO DE PARAMETROS", xlab="B0", ylab="B1")
 grid(col = "darkgray", lwd = 1)
 my_point<-locator(1)
 betas<-rbind(betas,c(my_point$x,my_point$y))
 points(betas, pch=2, col=3)
 colnames(betas)<-c('beta1','beta2')
 
+#3.2. Grafique la curva logistica sobre los hiperparametros ingresados en el grÃ¡fico anterior
 
-#3.2. Grafique la curva logistica sobre los hiperparametros ingresados en el gráfico anterior
-
-#Función de predicción de probabilidad
+#FunciÃ³n de predicciÃ³n de probabilidad
 logreg_predict<- function(x, betas){
   y_prob<- 1/(1+exp(-(betas[1]+betas[2]*x)))
   return(y_prob)
 }
 
-#Solo la gráfica de la curva
+#Solo la grÃ¡fica de la curva
 curve(logreg_predict(x,betas),from=0, to=1, main='CURVA GENERADA')
-
 
 #y_prob : Probabilidades de cada x con el beta ingresado
 y_prob<-logreg_predict(lr_data$x, betas)
@@ -79,43 +81,43 @@ y_prob<-logreg_predict(lr_data$x, betas)
 #Ajuste de la curva sobre los datos
 x<-seq(0,1,0.01)
 plot(x, logreg_predict(x,betas),
-     main=paste("Regresión logistica de los parámetros ingresados", betas[1],betas[2]),
+     main=paste("RegresiÃ³n logistica de los parÃ¡metros ingresados", betas[1],betas[2]),
      ylab="Probabilidad Condicionada",
      type="l",
      col="blue",
      xlim=c(0,1),
      ylim=c(0,1))
-points(lr_data)
+points(dfRes$xMean, dfRes$RelativeOcurr)
 
 
 #Curva ideal
-opt_beta<-c(-9, 11)#Son los parámetros ideales
+opt_beta<-c(-9, 11)#Son los parÃ¡metros ideales
 curve(logreg_predict(x,opt_beta),from=0, to=1, main='CURVA GENERADA')
 
 x<-seq(0,1,0.01)
 plot(x, logreg_predict(x,opt_beta),
-     main=paste("AJUSTE DEL MODELO ÓPTIMO SOBRE LOS DATOS"),
+     main=paste("AJUSTE DEL MODELO Ã“PTIMO SOBRE LOS DATOS"),
      ylab="Probabilidad Condicionada",
      type="l",
      col="blue",
      xlim=c(0,1),
      ylim=c(0,1))
-points(lr_data)
+points(dfRes$xMean, dfRes$RelativeOcurr, pch=20, col= 'blue')
 
 
 #4. Repetir hasta estar satisfecho con el resultado 
 
-#Ahora a encontrar un buen ajuste a partir del espacio de parámetros
+#Ahora a encontrar un buen ajuste a partir del espacio de parÃ¡metros
 
 betas<-c()
 for (i in 1:5){
   
-  plot(0, 0, col=NULL,xlim=c(-15, 15), ylim=c(-15, 15), main= "SELECCIONA UNA COMBINACIÓN DENTRO DEL ESPACIO DE PARAMETROS", xlab="B0", ylab="B1")
+  plot(0, 0, col=NULL,xlim=c(-15, 15), ylim=c(-15, 15), main= "SELECCIONA UNA COMBINACIÃ“N DENTRO DEL ESPACIO DE PARAMETROS", xlab="B0", ylab="B1")
   grid(col = "darkgray", lwd = 1)
   my_point<-locator(1)
   betas<-rbind(betas,c(my_point$x,my_point$y))
   points(betas[,1], betas[,2] , pch=2, col=c(1,2,3,4,5))
-  #UNA VEZ SELECCIONO UNA COMBINACIÓN
+  #UNA VEZ SELECCIONO UNA COMBINACIÃ“N
   x<-seq(0,1,0.01)
   plot(x, logreg_predict(x,c(betas[i,][1],betas[i,][2])),
        main=paste("AJUSTE PARA ", 'B0=' ,round(betas[i,][1],2), ' B1=' ,round(betas[i,][2],2)),
@@ -124,19 +126,20 @@ for (i in 1:5){
        col=i,
        xlim=c(0,1),
        ylim=c(0,1))
-  points(lr_data)
+  #points(lr_data)
+  points(dfRes$xMean, dfRes$RelativeOcurr, pch=20, col= 'blue')
 }
 colnames(betas)<-c('beta1','beta2')
 
-#5. Generar un gif con la evaluación del ajuste
+#5. Generar un gif con la evaluaciÃ³n del ajuste
 
-##FIN - Aquí si lo logre
+##FIN - AquÃ­ si lo logre
 
 
-dir.create("D:\\Documentos\\Rfiles\\Actividad3\\Punto2")
-setwd("D:\\Documentos\\Rfiles\\Actividad3\\Punto2")
-## max_it<-5 ##Está inicializado arriba
-png(file="logreg%02d.png",width=600, height=600)
+dir.create("D:\\Documentos\\Rfiles\\Actividad3\\Punto2\\Correccion")
+setwd("D:\\Documentos\\Rfiles\\Actividad3\\Punto2\\Correccion")
+## max_it<-5 ##EstÃ¡ inicializado arriba
+png(file="logregfix%02d.png",width=600, height=600)
 #betas<-c()
 x<-seq(0,1,0.01)
 i<-1
@@ -144,9 +147,8 @@ for (i in 1:5){
   plot(x, logreg_predict(x,c(betas[i,][1],betas[i,][2])), 
        main=paste("AJUSTE PARA ", 'B0=' ,round(betas[i,][1],2), ' B1=' ,round(betas[i,][2],2)),
        ylab="Probabilidad Condicionada", type = 'l', col=i, xlim = c(0,1), ylim = c(0,1) )
-  points(lr_data)
+  points(dfRes$xMean, dfRes$RelativeOcurr, pch=20, col= 'black')
 }
 dev.off()
 system("convert -delay 80 D:\\Documentos\\Rfiles\\Actividad3\\Punto2\\*.png logreg_33.gif")
 file.remove(list.files(pattern=".png"))
-
